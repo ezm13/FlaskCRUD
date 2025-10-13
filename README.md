@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="./banner.png" alt="Flask CRUD - Eroz Melendez" width="100%">
+  <img src="banner.png" alt="Flask CRUD - Eroz Melendez" width="100%">
 </p>
+
+
 
 
  # 🧩 Flask CRUD – Gestión de Usuarios
