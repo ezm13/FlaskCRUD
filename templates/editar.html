@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Editar usuario{% endblock %}
+
+
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="h4 mb-3">Editar usuario #{{ usuario[0] }}</h2>
+
+    <form method="POST" class="row g-3">
+      <div class="col-md-6">
+        <label for="nombre" class="form-label">Nombre</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="nombre" 
+          name="nombre" 
+          value="{{ usuario[1] }}" 
+          required>
+      </div>
+
+      <div class="col-md-6">
+        <label for="correo" class="form-label">Correo</label>
+        <input 
+          type="email" 
+          class="form-control" 
+          id="correo" 
+          name="correo" 
+          value="{{ usuario[2] }}" 
+          required>
+      </div>
+
+      <div class="col-md-4">
+        <label for="edad" class="form-label">Edad</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          id="edad" 
+          name="edad" 
+          value="{{ usuario[3] }}" 
+          min="1" 
+          required>
+      </div>
+
+      <div class="col-12 mt-3">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a href="/usuarios" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

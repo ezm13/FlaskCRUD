@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Agregar usuario{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="h4 mb-3">Agregar nuevo usuario</h2>
+
+    <form method="POST" class="row g-3">
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <label for="nombre" class="form-label">Nombre</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="nombre" 
+          name="nombre" 
+          placeholder="Escribe tu nombre" 
+          required>
+      </div>
+
+      <!-- Correo -->
+      <div class="col-md-6">
+        <label for="correo" class="form-label">Correo electrónico</label>
+        <input 
+          type="email" 
+          class="form-control" 
+          id="correo" 
+          name="correo" 
+          placeholder="nombre@ejemplo.com" 
+          required>
+      </div>
+
+      <!-- Edad -->
+      <div class="col-md-4">
+        <label for="edad" class="form-label">Edad</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          id="edad" 
+          name="edad" 
+          min="1" 
+          placeholder="Ej: 26" 
+          required>
+      </div>
+
+      <!-- Botones -->
+      <div class="col-12 mt-3">
+        <button type="submit" class="btn btn-success">
+          💾 Guardar usuario
+        </button>
+        <a href="/usuarios" class="btn btn-secondary">
+          🔙 Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
