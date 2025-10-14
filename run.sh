@@ -1,10 +1,8 @@
-#!/usr/bin/env bash
-# Script de inicio para Flask en Render
-
+#!/bin/bash
 echo "🚀 Iniciando aplicación Flask en Render..."
 
-# Crear base de datos si no existe
-python -c "import sqlite3; conn = sqlite3.connect('datos.db'); conn.close()"
+# Instalar dependencias (opcional si ya están instaladas por Render)
+pip install -r requirements.txt
 
-# Iniciar el servidor con Gunicorn en el puerto 10000 (Render usa este por defecto)
-gunicorn -w 4 -b 0.0.0.0:10000 app:app
+# Ejecutar Gunicorn con tu app Flask
+gunicorn app:app --bind 0.0.0.0:$PORT
