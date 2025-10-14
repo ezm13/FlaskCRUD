@@ -21,7 +21,6 @@ DATABASE = os.path.join("/tmp", "datos.db")
 # ✅ Función para inicializar la base si no existe
 def init_db():
     try:
-        # Asegurar que el directorio /tmp existe y tiene permisos
         if not os.path.exists("/tmp"):
             os.makedirs("/tmp", exist_ok=True)
 
@@ -35,11 +34,21 @@ def init_db():
                 edad INTEGER NOT NULL
             )
         """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        """)
         conn.commit()
         conn.close()
-        print("✅ Base de datos inicializada correctamente en", DATABASE)
+        print("✅ Tablas 'usuarios' y 'users' inicializadas correctamente")
     except Exception as e:
-        print("⚠️ Error al crear la base de datos:", e)
+        print("⚠️ Error al crear tablas:", e)
+
+
 
 
 # ✅ Inicializar la base al iniciar la app
@@ -64,7 +73,7 @@ class User(UserMixin):
     def get_by_email(correo):
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE correo = ?", (correo,))
+        cursor.execute("SELECT * FROM usuarios WHERE correo = ?", (correo,))
         row = cursor.fetchone()
         conn.close()
         if row:
@@ -75,7 +84,7 @@ class User(UserMixin):
     def get_by_id(id):
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (id,))
+        cursor.execute("SELECT * FROM usuarios WHERE id = ?", (id,))
         row = cursor.fetchone()
         conn.close()
         if row:
@@ -159,7 +168,7 @@ def register():
         pw_hash = generate_password_hash(password)
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute("INSERT INTO users (nombre, correo, password_hash) VALUES (?, ?, ?)", (nombre, correo, pw_hash))
+        c.execute("INSERT INTO usuarios (nombre, correo, password_hash) VALUES (?, ?, ?)", (nombre, correo, pw_hash))
         conn.commit()
         conn.close()
 
