@@ -20,18 +20,27 @@ DATABASE = os.path.join("/tmp", "datos.db")
 
 # ✅ Función para inicializar la base si no existe
 def init_db():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            correo TEXT UNIQUE NOT NULL,
-            edad INTEGER NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
+    try:
+        # Asegurar que el directorio /tmp existe y tiene permisos
+        if not os.path.exists("/tmp"):
+            os.makedirs("/tmp", exist_ok=True)
+
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT UNIQUE NOT NULL,
+                edad INTEGER NOT NULL
+            )
+        """)
+        conn.commit()
+        conn.close()
+        print("✅ Base de datos inicializada correctamente en", DATABASE)
+    except Exception as e:
+        print("⚠️ Error al crear la base de datos:", e)
+
 
 # ✅ Inicializar la base al iniciar la app
 init_db()
