@@ -1,43 +1,46 @@
+# app.py
+import re
+import os
+import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import (
     LoginManager, UserMixin, login_user, logout_user,
     login_required, current_user
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
-import os
-import re
 
-import os
+# ✅ Crear instancia de la app Flask
 app = Flask(__name__)
+
+# ✅ Clave secreta para sesiones
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave-super-secreta")
 
-# Usar ruta temporal segura para producción
-DATABASE = '/tmp/datos.db'
+# ✅ Ruta segura para la base en Render
+DATABASE = os.path.join("/tmp", "datos.db")
 
-# Crear base de datos si no existe
+# ✅ Función para inicializar la base si no existe
 def init_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             correo TEXT UNIQUE NOT NULL,
             edad INTEGER NOT NULL
         )
-    ''')
+    """)
     conn.commit()
     conn.close()
 
-# Inicializar la base al arrancar la app
+# ✅ Inicializar la base al iniciar la app
 init_db()
-
 
 # --- 1️⃣ Configurar Flask-Login antes del modelo ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 
 # --- 2️⃣ Modelo User compatible con Flask-Login ---
