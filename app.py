@@ -1,17 +1,195 @@
-from flask import Flask, flash, render_template, request, redirect,url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import (
+    LoginManager, UserMixin, login_user, logout_user,
+    login_required, current_user
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
-
-app = Flask(__name__)
 import os
+import re
+
+import os
+app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave-super-secreta")
+
+# Usar ruta temporal segura para producción
+DATABASE = '/tmp/datos.db'
+
+# Crear base de datos si no existe
+def init_db():
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            correo TEXT UNIQUE NOT NULL,
+            edad INTEGER NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Inicializar la base al arrancar la app
+init_db()
+
+
+# --- 1️⃣ Configurar Flask-Login antes del modelo ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+# --- 2️⃣ Modelo User compatible con Flask-Login ---
+class User(UserMixin):
+    def __init__(self, id, nombre, correo, password_hash):
+        self.id = id
+        self.nombre = nombre
+        self.correo = correo
+        self.password_hash = password_hash
+
+    @staticmethod
+    def get_by_email(correo):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE correo = ?", (correo,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return User(*row)
+        return None
+
+    @staticmethod
+    def get_by_id(id):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return User(*row)
+        return None
+
+
+# --- 3️⃣ Requerido por Flask-Login ---
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
+
+DATABASE = 'datos.db'
+
+#DATABASE = 'datos.db'
+
+# Configurar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+# --- MODELO USER ---
+class User(UserMixin):
+    def __init__(self, id, nombre, correo, password_hash):
+        self.id = id
+        self.nombre = nombre
+        self.correo = correo
+        self.password_hash = password_hash
+
+    @staticmethod
+    def get_by_email(correo):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE correo = ?", (correo,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return User(*row)
+        return None
+
+    @staticmethod
+    def get_by_id(id):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return User(*row)
+        return None
+
+
+# Requerido por Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        correo = request.form['correo'].strip().lower()
+        password = request.form['password']
+
+        if not nombre or not correo or not password:
+            flash("Todos los campos son obligatorios.", "warning")
+            return render_template('register.html')
+
+        # validar formato simple de correo
+        import re
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', correo):
+            flash("Correo inválido.", "warning")
+            return render_template('register.html')
+
+        # verificar si ya existe
+        if User.get_by_email(correo):
+            flash("Ya existe una cuenta con ese correo.", "danger")
+            return render_template('register.html')
+
+        pw_hash = generate_password_hash(password)
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute("INSERT INTO users (nombre, correo, password_hash) VALUES (?, ?, ?)", (nombre, correo, pw_hash))
+        conn.commit()
+        conn.close()
+
+        flash("Cuenta creada correctamente. Inicia sesión ahora.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        correo = request.form['correo'].strip().lower()
+        password = request.form['password']
+        user = User.get_by_email(correo)
+
+        if not user or not check_password_hash(user.password_hash, password):
+            flash("❌ Correo o contraseña incorrectos.", "danger")
+            return render_template('login.html')
+
+        login_user(user)
+        flash(f"👋 Bienvenido {user.nombre}", "success")
+        return redirect(url_for('formulario'))  # Redirige al CRUD
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("Sesión cerrada.", "info")
+    return redirect(url_for('login'))
+
 
 # Ruta principal: redirige al formulario
 @app.route('/')
+@login_required
 def home():
     return redirect('/formulario')
 
 # Crear usuario
-import re  # 👈 Importa esto al inicio del archivo, si no lo tienes
 
 @app.route('/formulario', methods=['GET', 'POST'])
 def formulario():
@@ -54,16 +232,17 @@ def formulario():
         conn.close()
 
         flash("✅ Usuario agregado correctamente.", "success")
-        return redirect('/usuarios')
+        return redirect(url_for('usuarios'))
 
     # GET: mostrar formulario vacío
     return render_template('formulario.html')
-      
+
    
 
 
 # Leer usuarios
 @app.route('/usuarios')
+@login_required
 def usuarios():
     conn = sqlite3.connect('datos.db')
     c = conn.cursor()

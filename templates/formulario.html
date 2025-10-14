@@ -1,59 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Agregar usuario{% endblock %}
-
+{% block title %}Agregar Usuario{% endblock %}
 {% block content %}
+
 <div class="card shadow-sm">
-  <div class="card-body">
-    <h2 class="h4 mb-3">Agregar nuevo usuario</h2>
-
-    <form method="POST" class="row g-3">
-      <!-- Nombre -->
-      <div class="col-md-6">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input 
-          type="text" 
-          class="form-control" 
-          id="nombre" 
-          name="nombre" 
-          placeholder="Escribe tu nombre" 
-          required>
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0">➕ Agregar Nuevo Usuario</h5>
+  </div>
+  <div class="card-body bg-white">
+    <form method="POST" action="{{ url_for('formulario') }}">
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre completo</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ingrese el nombre" required>
       </div>
 
-      <!-- Correo -->
-      <div class="col-md-6">
+      <div class="mb-3">
         <label for="correo" class="form-label">Correo electrónico</label>
-        <input 
-          type="email" 
-          class="form-control" 
-          id="correo" 
-          name="correo" 
-          placeholder="nombre@ejemplo.com" 
-          required>
+        <input type="email" class="form-control" id="correo" name="correo" placeholder="ejemplo@correo.com" required>
       </div>
 
-      <!-- Edad -->
-      <div class="col-md-4">
+      <div class="mb-3">
         <label for="edad" class="form-label">Edad</label>
-        <input 
-          type="number" 
-          class="form-control" 
-          id="edad" 
-          name="edad" 
-          min="1" 
-          placeholder="Ej: 26" 
-          required>
+        <input type="number" class="form-control" id="edad" name="edad" placeholder="Ingrese la edad" required min="1">
       </div>
 
-      <!-- Botones -->
-      <div class="col-12 mt-3">
-        <button type="submit" class="btn btn-success">
-          💾 Guardar usuario
-        </button>
-        <a href="/usuarios" class="btn btn-secondary">
-          🔙 Cancelar
-        </a>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('usuarios') }}" class="btn btn-secondary">⬅️ Volver</a>
+        <button type="submit" class="btn btn-success">Guardar</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}

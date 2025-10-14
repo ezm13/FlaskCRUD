@@ -1,53 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Editar usuario{% endblock %}
-
-
-
+{% block title %}Editar Usuario{% endblock %}
 {% block content %}
+
 <div class="card shadow-sm">
-  <div class="card-body">
-    <h2 class="h4 mb-3">Editar usuario #{{ usuario[0] }}</h2>
-
-    <form method="POST" class="row g-3">
-      <div class="col-md-6">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input 
-          type="text" 
-          class="form-control" 
-          id="nombre" 
-          name="nombre" 
-          value="{{ usuario[1] }}" 
-          required>
+  <div class="card-header bg-info text-white">
+    <h5 class="mb-0">✏️ Editar Usuario</h5>
+  </div>
+  <div class="card-body bg-white">
+    <form method="POST" action="{{ url_for('editar_usuario', user_id=usuario[0]) }}">
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre completo</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ usuario[1] }}" required>
       </div>
 
-      <div class="col-md-6">
-        <label for="correo" class="form-label">Correo</label>
-        <input 
-          type="email" 
-          class="form-control" 
-          id="correo" 
-          name="correo" 
-          value="{{ usuario[2] }}" 
-          required>
+      <div class="mb-3">
+        <label for="correo" class="form-label">Correo electrónico</label>
+        <input type="email" class="form-control" id="correo" name="correo" value="{{ usuario[2] }}" required>
       </div>
 
-      <div class="col-md-4">
+      <div class="mb-3">
         <label for="edad" class="form-label">Edad</label>
-        <input 
-          type="number" 
-          class="form-control" 
-          id="edad" 
-          name="edad" 
-          value="{{ usuario[3] }}" 
-          min="1" 
-          required>
+        <input type="number" class="form-control" id="edad" name="edad" value="{{ usuario[3] }}" required min="1">
       </div>
 
-      <div class="col-12 mt-3">
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
-        <a href="/usuarios" class="btn btn-secondary">Cancelar</a>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('usuarios') }}" class="btn btn-secondary">⬅️ Cancelar</a>
+        <button type="submit" class="btn btn-info text-white">Actualizar</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}

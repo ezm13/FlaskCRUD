@@ -2,9 +2,6 @@
   <img src="banner.png" alt="Flask CRUD - Eroz Melendez" width="100%">
 </p>
 
-
-
-
  # 🧩 Flask CRUD – Gestión de Usuarios
 
 Aplicación web desarrollada con **Flask (Python)** que implementa un sistema **CRUD (Create, Read, Update, Delete)** para gestionar usuarios en una base de datos SQLite.  
