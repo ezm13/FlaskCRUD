@@ -26,6 +26,8 @@ def init_db():
 
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
+
+        # Crear tabla para el CRUD
         c.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,6 +36,8 @@ def init_db():
                 edad INTEGER NOT NULL
             )
         """)
+
+        # Crear tabla para Login / Registro
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,13 +46,13 @@ def init_db():
                 password TEXT NOT NULL
             )
         """)
+
+        # ✅ Confirmar y cerrar
         conn.commit()
         conn.close()
-        print("✅ Tablas 'usuarios' y 'users' inicializadas correctamente")
+        print("✅ Tablas 'usuarios' y 'users' creadas correctamente en:", DATABASE)
     except Exception as e:
-        print("⚠️ Error al crear tablas:", e)
-
-
+        print("⚠️ Error al crear las tablas:", e)
 
 
 # ✅ Inicializar la base al iniciar la app
