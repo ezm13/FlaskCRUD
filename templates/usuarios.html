@@ -29,11 +29,12 @@
               <td>{{ u[3] }}</td>
               <td>
                 <a href="{{ url_for('editar_usuario', user_id=u[0]) }}" class="btn btn-sm btn-outline-info">✏️ Editar</a>
-                <form action="{{ url_for('eliminar_usuario', id=u[0]) }}" method="POST" style="display:inline;">
+                <form action="{{ url_for('eliminar_usuario', user_id=u[0]) }}" method="POST" style="display:inline;">
                  <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar este usuario?');">
                      Eliminar
                  </button>
                  </form>
+
               </td>
             </tr>
             {% endfor %}
