@@ -1,6 +1,7 @@
+# app.py
 import os
-import sqlite3
 import re
+import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import (
     LoginManager, UserMixin, login_user, logout_user,
@@ -8,16 +9,24 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# ======================================================
+# 🔹 CONFIGURACIÓN PRINCIPAL
+# ======================================================
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave-super-secreta")
 
+# Base de datos en ruta temporal (Render reinicia /tmp en cada despliegue)
 DATABASE = "/tmp/datos.db"
 
+
+# ======================================================
+# 🔹 FUNCIÓN PARA CREAR LAS TABLAS SI NO EXISTEN
+# ======================================================
 def init_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
-    # Tabla para el CRUD
+    # Tabla CRUD
     c.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +36,7 @@ def init_db():
         )
     """)
 
-    # Tabla para el sistema de login
+    # Tabla de login
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,74 +48,26 @@ def init_db():
 
     conn.commit()
     conn.close()
-    print("✅ Tablas creadas correctamente en Render")
+    print("✅ Tablas inicializadas correctamente.")
 
-# ✅ Inicializar la base al inicio
-with app.app_context():
-    init_db()
 
-# Configurar login manager
+# ======================================================
+# 🔹 CONFIGURAR FLASK-LOGIN
+# ======================================================
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = "login"
 
 
-
-
-
-# --- 2️⃣ Modelo User compatible con Flask-Login ---
+# ======================================================
+# 🔹 CLASE USER PARA LOGIN
+# ======================================================
 class User(UserMixin):
-    def __init__(self, id, nombre, correo, password_hash):
+    def __init__(self, id, nombre, correo, password):
         self.id = id
         self.nombre = nombre
         self.correo = correo
-        self.password_hash = password_hash
-
-    @staticmethod
-    def get_by_email(correo):
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM usuarios WHERE correo = ?", (correo,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return User(*row)
-        return None
-
-    @staticmethod
-    def get_by_id(id):
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM usuarios WHERE id = ?", (id,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return User(*row)
-        return None
-
-
-# --- 3️⃣ Requerido por Flask-Login ---
-@login_manager.user_loader
-def load_user(user_id):
-    return User.get_by_id(user_id)
-
-DATABASE = 'datos.db'
-
-#DATABASE = 'datos.db'
-
-# Configurar Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-
-# --- MODELO USER ---
-class User(UserMixin):
-    def __init__(self, id, nombre, correo, password_hash):
-        self.id = id
-        self.nombre = nombre
-        self.correo = correo
-        self.password_hash = password_hash
+        self.password = password
 
     @staticmethod
     def get_by_email(correo):
@@ -131,181 +92,172 @@ class User(UserMixin):
         return None
 
 
-# Requerido por Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get_by_id(user_id)
+    return User.get_by_id(int(user_id))
 
-@app.route('/register', methods=['GET', 'POST'])
+
+# ======================================================
+# 🔹 RUTA DE REGISTRO
+# ======================================================
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
-        nombre = request.form['nombre'].strip()
-        correo = request.form['correo'].strip().lower()
-        password = request.form['password']
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        correo = request.form["correo"].strip()
+        password = request.form["password"].strip()
 
         if not nombre or not correo or not password:
-            flash("Todos los campos son obligatorios.", "warning")
-            return render_template('register.html')
+            flash("⚠️ Todos los campos son obligatorios.", "warning")
+            return render_template("register.html")
 
-        # validar formato simple de correo
-        import re
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', correo):
-            flash("Correo inválido.", "warning")
-            return render_template('register.html')
-
-        # verificar si ya existe
         if User.get_by_email(correo):
-            flash("Ya existe una cuenta con ese correo.", "danger")
-            return render_template('register.html')
+            flash("🚫 Ya existe una cuenta con ese correo.", "danger")
+            return render_template("register.html")
 
-        pw_hash = generate_password_hash(password)
+        hashed_pw = generate_password_hash(password)
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute("INSERT INTO usuarios (nombre, correo, password_hash) VALUES (?, ?, ?)", (nombre, correo, pw_hash))
+        c.execute("INSERT INTO users (nombre, correo, password) VALUES (?, ?, ?)",
+                  (nombre, correo, hashed_pw))
         conn.commit()
         conn.close()
 
-        flash("Cuenta creada correctamente. Inicia sesión ahora.", "success")
-        return redirect(url_for('login'))
+        flash("✅ Registro exitoso. Ahora puedes iniciar sesión.", "success")
+        return redirect(url_for("login"))
 
-    return render_template('register.html')
+    return render_template("register.html")
 
 
-@app.route('/login', methods=['GET', 'POST'])
+# ======================================================
+# 🔹 RUTA DE LOGIN
+# ======================================================
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        correo = request.form['correo'].strip().lower()
-        password = request.form['password']
-        user = User.get_by_email(correo)
+    if request.method == "POST":
+        correo = request.form["correo"].strip()
+        password = request.form["password"].strip()
 
-        if not user or not check_password_hash(user.password_hash, password):
-            flash("❌ Correo o contraseña incorrectos.", "danger")
-            return render_template('login.html')
+        user = User.get_by_email(correo)
+        if not user or not check_password_hash(user.password, password):
+            flash("❌ Credenciales incorrectas.", "danger")
+            return render_template("login.html")
 
         login_user(user)
-        flash(f"👋 Bienvenido {user.nombre}", "success")
-        return redirect(url_for('formulario'))  # Redirige al CRUD
+        flash(f"👋 Bienvenido, {user.nombre}!", "success")
+        return redirect(url_for("usuarios"))
 
-    return render_template('login.html')
+    return render_template("login.html")
 
 
-@app.route('/logout')
+# ======================================================
+# 🔹 RUTA DE LOGOUT
+# ======================================================
+@app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    flash("Sesión cerrada.", "info")
-    return redirect(url_for('login'))
+    flash("👋 Sesión cerrada correctamente.", "info")
+    return redirect(url_for("login"))
 
 
-# Ruta principal: redirige al formulario
-@app.route('/')
+# ======================================================
+# 🔹 CRUD DE USUARIOS
+# ======================================================
+@app.route("/")
 @login_required
 def home():
-    return redirect('/formulario')
+    return redirect(url_for("usuarios"))
 
-# Crear usuario
 
-@app.route('/formulario', methods=['GET', 'POST'])
+@app.route("/usuarios")
+@login_required
+def usuarios():
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT * FROM usuarios")
+    usuarios = c.fetchall()
+    conn.close()
+    return render_template("usuarios.html", usuarios=usuarios)
+
+
+@app.route("/formulario", methods=["GET", "POST"])
+@login_required
 def formulario():
-    if request.method == 'POST':
-        nombre = request.form['nombre'].strip()
-        correo = request.form['correo'].strip()
-        edad = request.form['edad'].strip()
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        correo = request.form["correo"].strip()
+        edad = request.form["edad"].strip()
 
-        # ⚠️ Validar campos vacíos
         if not nombre or not correo or not edad:
             flash("⚠️ Todos los campos son obligatorios.", "warning")
-            return render_template('formulario.html')
+            return render_template("formulario.html")
 
-        # ⚠️ Validar formato de correo
-        patron_correo = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not re.match(patron_correo, correo):
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", correo):
             flash("📧 Ingresa un correo electrónico válido.", "warning")
-            return render_template('formulario.html')
+            return render_template("formulario.html")
 
-        # ⚠️ Validar edad
         if not edad.isdigit() or int(edad) <= 0:
             flash("🔢 La edad debe ser un número positivo.", "warning")
-            return render_template('formulario.html')
+            return render_template("formulario.html")
 
-        # 🔍 Verificar si el correo ya existe
-        conn = sqlite3.connect('datos.db')
+        conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT id FROM usuarios WHERE correo = ?", (correo,))
         existente = c.fetchone()
-
         if existente:
             conn.close()
-            flash("🚫 Ya existe un usuario registrado con ese correo.", "danger")
-            return render_template('formulario.html')
+            flash("🚫 Ya existe un usuario con ese correo.", "danger")
+            return render_template("formulario.html")
 
-        # ✅ Insertar nuevo usuario
         c.execute("INSERT INTO usuarios (nombre, correo, edad) VALUES (?, ?, ?)",
                   (nombre, correo, edad))
         conn.commit()
         conn.close()
-
         flash("✅ Usuario agregado correctamente.", "success")
-        return redirect(url_for('usuarios'))
+        return redirect(url_for("usuarios"))
 
-    # GET: mostrar formulario vacío
-    return render_template('formulario.html')
-
-   
+    return render_template("formulario.html")
 
 
-# Leer usuarios
-@app.route('/usuarios')
+@app.route("/usuarios/editar/<int:user_id>", methods=["GET", "POST"])
 @login_required
-def usuarios():
-    conn = sqlite3.connect('datos.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM usuarios')
-    usuarios = c.fetchall()
-    conn.close()
-    return render_template('usuarios.html', usuarios=usuarios)
-
-# Editar usuario
-@app.route('/usuarios/editar/<int:user_id>', methods=['GET', 'POST'])
 def editar_usuario(user_id):
-    conn = sqlite3.connect('datos.db')
+    conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        correo = request.form["correo"].strip()
+        edad = request.form["edad"].strip()
 
-    # Si el formulario fue enviado (POST)
-    if request.method == 'POST':
-        nombre = request.form['nombre']
-        correo = request.form['correo']
-        edad = request.form['edad']
-
-        c.execute("UPDATE usuarios SET nombre=?, correo=?, edad=? WHERE id=?", 
+        c.execute("UPDATE usuarios SET nombre=?, correo=?, edad=? WHERE id=?",
                   (nombre, correo, edad, user_id))
         conn.commit()
         conn.close()
+        flash("✏️ Usuario actualizado correctamente.", "info")
+        return redirect(url_for("usuarios"))
+    else:
+        c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,))
+        usuario = c.fetchone()
+        conn.close()
+        return render_template("editar.html", usuario=usuario)
 
-        flash("✏️ Usuario actualizado.", "info")
-        return redirect('/usuarios')
 
-    # Si solo entramos a ver el formulario (GET)
-    c.execute("SELECT * FROM usuarios WHERE id=?", (user_id,))
-    usuario = c.fetchone()
-    conn.close()
-
-    if not usuario:
-        flash("⚠️ Usuario no encontrado.", "warning")
-        return redirect('/usuarios')
-
-    return render_template('editar.html', usuario=usuario)
-
-# Eliminar usuario
-@app.route('/usuarios/eliminar/<int:user_id>', methods=['POST'])
+@app.route("/usuarios/eliminar/<int:user_id>")
+@login_required
 def eliminar_usuario(user_id):
-    conn = sqlite3.connect('datos.db')
+    conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute('DELETE FROM usuarios WHERE id = ?', (user_id,))
+    c.execute("DELETE FROM usuarios WHERE id=?", (user_id,))
     conn.commit()
     conn.close()
-    flash("🗑️ Usuario eliminado.", "warning")
-    return redirect('/usuarios')
+    flash("🗑️ Usuario eliminado correctamente.", "danger")
+    return redirect(url_for("usuarios"))
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+
+# ======================================================
+# 🔹 EJECUCIÓN LOCAL
+# ======================================================
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
