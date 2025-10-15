@@ -11,14 +11,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 # ✅ Crear instancia de la app Flask
 app = Flask(__name__)
-
-# ✅ Clave secreta para sesiones
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave-super-secreta")
 
-# ✅ Ruta segura para la base en Render
-DATABASE = os.path.join("/tmp", "datos.db")
+# ✅ Ruta de base de datos segura para Render
+DATABASE = "/tmp/datos.db"
 
-# ✅ Función para inicializar la base si no existe
+# ✅ Crear base de datos y tablas necesarias
 def init_db():
     try:
         if not os.path.exists("/tmp"):
@@ -27,7 +25,7 @@ def init_db():
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
 
-        # Crear tabla para el CRUD
+        # Tabla de usuarios del CRUD
         c.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +35,7 @@ def init_db():
             )
         """)
 
-        # Crear tabla para Login / Registro
+        # Tabla de usuarios del sistema de login
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,18 +45,16 @@ def init_db():
             )
         """)
 
-        # ✅ Confirmar y cerrar
         conn.commit()
         conn.close()
-        print("✅ Tablas 'usuarios' y 'users' creadas correctamente en:", DATABASE)
+        print("✅ Base de datos y tablas inicializadas correctamente")
     except Exception as e:
-        print("⚠️ Error al crear las tablas:", e)
+        print("⚠️ Error al crear base de datos:", e)
 
-
-# ✅ Inicializar la base al iniciar la app
+# ✅ Inicializar la base antes de cualquier otra cosa
 init_db()
 
-# --- 1️⃣ Configurar Flask-Login antes del modelo ---
+# ✅ Configurar Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
