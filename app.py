@@ -242,19 +242,16 @@ def editar_usuario(user_id):
         conn.close()
         return render_template("editar.html", usuario=usuario)
 
-
-@app.route("/usuarios/eliminar/<int:user_id>")
-@login_required
-@app.route('/usuarios/eliminar/<int:id>', methods=['POST'])
-def eliminar_usuario(id):
+@app.route("/usuarios/eliminar/<int:user_id>", methods=["POST"])
+def eliminar_usuario(user_id):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute('DELETE FROM usuarios WHERE id = ?', (id,))
+    c.execute("DELETE FROM usuarios WHERE id = ?", (user_id,))
     conn.commit()
     conn.close()
 
     flash("🗑️ Usuario eliminado correctamente.", "success")
-    return redirect(url_for('usuarios'))
+    return redirect(url_for("usuarios"))
 
 
 
