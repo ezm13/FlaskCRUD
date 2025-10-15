@@ -1,7 +1,6 @@
-# app.py
-import re
 import os
 import sqlite3
+import re
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import (
     LoginManager, UserMixin, login_user, logout_user,
@@ -9,55 +8,49 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# ✅ Crear instancia de la app Flask
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "clave-super-secreta")
 
-# ✅ Ruta de base de datos segura para Render
 DATABASE = "/tmp/datos.db"
 
-# ✅ Crear base de datos y tablas necesarias
 def init_db():
-    try:
-        if not os.path.exists("/tmp"):
-            os.makedirs("/tmp", exist_ok=True)
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
 
-        conn = sqlite3.connect(DATABASE)
-        c = conn.cursor()
+    # Tabla para el CRUD
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            correo TEXT UNIQUE NOT NULL,
+            edad INTEGER NOT NULL
+        )
+    """)
 
-        # Tabla de usuarios del CRUD
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT NOT NULL,
-                correo TEXT UNIQUE NOT NULL,
-                edad INTEGER NOT NULL
-            )
-        """)
+    # Tabla para el sistema de login
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            correo TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
 
-        # Tabla de usuarios del sistema de login
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT NOT NULL,
-                correo TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
-            )
-        """)
+    conn.commit()
+    conn.close()
+    print("✅ Tablas creadas correctamente en Render")
 
-        conn.commit()
-        conn.close()
-        print("✅ Base de datos y tablas inicializadas correctamente")
-    except Exception as e:
-        print("⚠️ Error al crear base de datos:", e)
+# ✅ Inicializar la base al inicio
+with app.app_context():
+    init_db()
 
-# ✅ Inicializar la base antes de cualquier otra cosa
-init_db()
-
-# ✅ Configurar Flask-Login
+# Configurar login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+
 
 
 
